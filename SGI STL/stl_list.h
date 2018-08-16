@@ -74,7 +74,10 @@ template<class T, class Ref, class Ptr> struct __list_iterator
 	bool operator!=(const self& x) const { return node != x.node; }
   
 	//对迭代器dereference，取的是迭代器所维护的结点的值
-	reference operator*() const { return (*node).data; }	
+	reference operator*() const 
+	{ 
+		return (*node).data; 
+	}	
 
 	//如果支持->操作 
 	#ifndef __SGI_STL_NO_ARROW_OPERATOR 
@@ -83,7 +86,6 @@ template<class T, class Ref, class Ptr> struct __list_iterator
 			return &(operator*()); 
 		}
 	#endif /* __SGI_STL_NO_ARROW_OPERATOR */
- 
  
 	//迭代器前进、后退的支持
 	self& operator++() 
@@ -321,11 +323,14 @@ template <class T, class Alloc = alloc> class list
 			__STD::swap(node, x.node); 
 		}
  
+		//这个插入是插在position之前，如果position是n，那么新节点是n-1
 		iterator insert(iterator position, const T& x) 
 		{
 			link_type tmp = create_node(x); 
+			//设置新节点的指针
 			tmp->next = position.node;
 			tmp->prev = position.node->prev;
+			//交出原来的位置
 			(link_type(position.node->prev))->next = tmp;
 			position.node->prev = tmp;
 			return tmp;
@@ -445,17 +450,13 @@ template <class T, class Alloc = alloc> class list
 		{
 			if (position != last) 
 			{
-				/*
-				要把[first,last)在原有链表去除，然后安接到position前
-				(1)-(7)步对应后面的图
-				*/
-				(*(link_type((*last.node).prev))).next = position.node;	// (1)
-				(*(link_type((*first.node).prev))).next = last.node;		// (2)
-				(*(link_type((*position.node).prev))).next = first.node;  	// (3)
-				link_type tmp = link_type((*position.node).prev);			// (4)
-				(*position.node).prev = (*last.node).prev;				// (5)
-				(*last.node).prev = (*first.node).prev; 					// (6)
-				(*first.node).prev = tmp;								// (7)
+				(*(link_type((*last.node).prev))).next = position.node;	
+				(*(link_type((*first.node).prev))).next = last.node;
+				(*(link_type((*position.node).prev))).next = first.node; 
+				link_type tmp = link_type((*position.node).prev);
+				(*position.node).prev = (*last.node).prev;
+				(*last.node).prev = (*first.node).prev; 
+				(*first.node).prev = tmp;
 			}
 		}
  
@@ -585,8 +586,7 @@ template <class T, class Alloc>list<T,Alloc>::iterator list<T, Alloc>::erase(ite
 如果new_size大于原来的链表，则在链表末尾插入x
 如果new_size小于原来的链表，则在末尾直接擦除多余的元素
 */
-template <class T, class Alloc>
-void list<T, Alloc>::resize(size_type new_size, const T& x)
+template <class T, class Alloc> void list<T, Alloc>::resize(size_type new_size, const T& x)
 {
   iterator i = begin();
   size_type len = 0;
@@ -599,207 +599,272 @@ void list<T, Alloc>::resize(size_type new_size, const T& x)
 }
  
 // 清除所有结点，（哨兵结点除外）
-template <class T, class Alloc> 
-void list<T, Alloc>::clear()
+template <class T, class Alloc> void list<T, Alloc>::clear()
 {
-  link_type cur = (link_type) node->next; // begin()
-  while (cur != node) {	
-    link_type tmp = cur;
-    cur = (link_type) cur->next;
-    destroy_node(tmp); 	
-  }
-  // 恢复哨兵结点，链表此时为空链表
-  node->next = node;
-  node->prev = node;
+	link_type cur = (link_type) node->next; // begin()
+	while (cur != node) 
+	{	
+		link_type tmp = cur;
+		cur = (link_type) cur->next;
+		destroy_node(tmp); 	
+	}
+	// 恢复哨兵结点，链表此时为空链表
+	node->next = node;
+	node->prev = node;
 }
 //重载赋值=操作符
-template <class T, class Alloc>
-list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& x) {
-  if (this != &x) {//防止自身赋值
-    iterator first1 = begin();
-    iterator last1 = end();
-    const_iterator first2 = x.begin();
-    const_iterator last2 = x.end();
-	//通过更改结点的值来赋值
-    while (first1 != last1 && first2 != last2) *first1++ = *first2++;
-	/*
-	如果x链表小于this链表，擦除多余的，否则在this后面插入
-	*/
-    if (first2 == last2)
-      erase(first1, last1);
-    else
-      insert(last1, first2, last2);
-  }
-  return *this;
+template <class T, class Alloc>list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& x) 
+{
+	if (this != &x) 
+	{
+		//防止自身赋值
+		iterator first1 = begin();
+		iterator last1 = end();
+		const_iterator first2 = x.begin();
+		const_iterator last2 = x.end();
+		//通过更改结点的值来赋值
+		while (first1 != last1 && first2 != last2)
+		{
+			*first1++ = *first2++;
+		}
+		/*
+		如果x链表小于this链表，擦除多余的，否则在this后面插入
+		*/
+		if (first2 == last2)
+		{
+			erase(first1, last1);
+		}
+		else
+		{
+			insert(last1, first2, last2);
+		}
+	}
+	return *this;
 }
  
 // 将数值为value的结点移除
-template <class T, class Alloc>
-void list<T, Alloc>::remove(const T& value) {
-  iterator first = begin();
-  iterator last = end();
-  while (first != last) {	// 巡訪每一個節點
-    iterator next = first;
-    ++next;
-    if (*first == value) erase(first); 	// 找到就移除
-    first = next;
-  }
+template <class T, class Alloc> void list<T, Alloc>::remove(const T& value)
+{
+	iterator first = begin();
+	iterator last = end();
+	while (first != last) 
+	{
+		iterator next = first;
+		++next;
+		if (*first == value) erase(first); 	// 找到就移除
+		{
+			first = next;
+		}
+	}
 }
  
 // 移除数值相同的连续元素
-template <class T, class Alloc>
-void list<T, Alloc>::unique() {
-  iterator first = begin();
-  iterator last = end();
-  if (first == last) return;
-  iterator next = first;
-  while (++next != last) {
-    if (*first == *next)//如果数值相同，则移除后面的那个
-      erase(next);
-    else
-      first = next;
-    next = first;
-  }
+template <class T, class Alloc> void list<T, Alloc>::unique() 
+{
+	iterator first = begin();
+	iterator last = end();
+	if (first == last) return;
+	iterator next = first;
+	while (++next != last) 
+	{
+		if (*first == *next)//如果数值相同，则移除后面的那个
+		{
+			erase(next);
+		}
+		else
+		{
+			first = next;
+		}
+		next = first;
+	}
 }
  
 //将x合并到*this上面。两个链表都要先经过递增排序。相当于合并排序的最后一步
-template <class T, class Alloc>
-void list<T, Alloc>::merge(list<T, Alloc>& x) {
-  iterator first1 = begin();
-  iterator last1 = end();
-  iterator first2 = x.begin();
-  iterator last2 = x.end();
+template <class T, class Alloc>void list<T, Alloc>::merge(list<T, Alloc>& x)
+{
+	iterator first1 = begin();
+	iterator last1 = end();
+	iterator first2 = x.begin();
+	iterator last2 = x.end();
  
-  //注意：此时已经假设两个链表都已经非递减排序好了
-  while (first1 != last1 && first2 != last2)
-    if (*first2 < *first1) {
-      iterator next = first2;
-      transfer(first1, first2, ++next);
-      first2 = next;
-    }
-    else
-      ++first1;
-  if (first2 != last2) transfer(last1, first2, last2);
+	//注意：此时已经假设两个链表都已经非递减排序好了
+	while (first1 != last1 && first2 != last2)
+	{
+		if (*first2 < *first1)
+		{
+			iterator next = first2;
+			transfer(first1, first2, ++next);
+			first2 = next;
+		}
+		else
+		{
+			++first1;
+		}
+	}
+	if (first2 != last2)
+	{
+		transfer(last1, first2, last2);
+	}
 }
  
 // 将 *this 的內容逆向重置
-template <class T, class Alloc>
-void list<T, Alloc>::reverse() {
- 
+template <class T, class Alloc>void list<T, Alloc>::reverse() 
+{
 	//如果链表是空，或者只有一个元素，就不做任何处理
 	//不是用size()==0或size()==1来判断，因为这样比较慢
-  if (node->next == node || link_type(node->next)->next == node) return;
-  iterator first = begin();
-  ++first;
-  while (first != end()) {
-    iterator old = first;
-    ++first;
-    transfer(begin(), old, first);
-  }
+	if (node->next == node || link_type(node->next)->next == node)
+	{
+		return;
+	}
+	iterator first = begin();
+	++first;
+	while (first != end()) 
+	{
+		iterator old = first;
+		++first;
+		transfer(begin(), old, first);
+	}
 }    
  
 /*
-STL的sort算法只能接受迭代器类型为RamdonAccessIterator的容器，所以list无法
-使用，故自己重写排序算法。这里使用的是快速排序。具体可以参考这里：<a target=_blank href="http://blog.csdn.net/zhizichina/article/details/7538974">http://blog.csdn.net/zhizichina/article/details/7538974</a>
+STL的sort算法只能接受迭代器类型为RamdonAccessIterator的容器，所以list无法使用
+这个是什么算法？？？
 */
-template <class T, class Alloc>
-void list<T, Alloc>::sort() {
-  
-  if (node->next == node || link_type(node->next)->next == node) return;
- 
-  // carry作为tmp
-  list<T, Alloc> carry;
-  list<T, Alloc> counter[64];
-  int fill = 0;
-  while (!empty()) {
-    carry.splice(carry.begin(), *this, begin());
-    int i = 0;
-    while(i < fill && !counter[i].empty()) {
-      counter[i].merge(carry);
-      carry.swap(counter[i++]);
-    }
-    carry.swap(counter[i]);         
-    if (i == fill) ++fill;
-  } 
- 
-  for (int i = 1; i < fill; ++i) 
-     counter[i].merge(counter[i-1]);
-  swap(counter[fill-1]);
+template <class T, class Alloc>void list<T, Alloc>::sort() 
+{
+	if (node->next == node || link_type(node->next)->next == node)
+	{
+		return;
+	}
+	list<T, Alloc> carry;
+	list<T, Alloc> counter[64];
+	int fill = 0;
+	while (!empty()) 
+	{
+		carry.splice(carry.begin(), *this, begin());
+		int i = 0;
+		while(i < fill && !counter[i].empty())
+		{
+			counter[i].merge(carry);
+			carry.swap(counter[i++]);
+		}
+		carry.swap(counter[i]);
+		if (i == fill)
+		{
+			++fill;
+		}
+	} 
+	for (int i = 1; i < fill; ++i)
+	{
+		counter[i].merge(counter[i - 1]);
+	}
+	swap(counter[fill-1]);
 }
  
 #ifdef __STL_MEMBER_TEMPLATES
 /*
 pred是一个函数，如果容器内的元素经过pred函数判断为真，则移除
 */
-template <class T, class Alloc> template <class Predicate>
-void list<T, Alloc>::remove_if(Predicate pred) {
-  iterator first = begin();
-  iterator last = end();
-  while (first != last) {
-    iterator next = first;
-    ++next;
-    if (pred(*first)) erase(first);
-    first = next;
-  }
+template <class T, class Alloc> template <class Predicate> void list<T, Alloc>::remove_if(Predicate pred) 
+{
+	iterator first = begin();
+	iterator last = end();
+	while (first != last) 
+	{
+		iterator next = first;
+		++next;
+		if (pred(*first)) 
+		{ 
+			erase(first); 
+		}
+		first = next;
+	}
 }
 /*
 根据函数binary_pred来判断是否移除两个相邻的结点
 */
-template <class T, class Alloc> template <class BinaryPredicate>
-void list<T, Alloc>::unique(BinaryPredicate binary_pred) {
-  iterator first = begin();
-  iterator last = end();
-  if (first == last) return;
-  iterator next = first;
-  while (++next != last) {
-    if (binary_pred(*first, *next))
-      erase(next);
-    else
-      first = next;
-    next = first;
-  }
+template <class T, class Alloc> template <class BinaryPredicate>void list<T, Alloc>::unique(BinaryPredicate binary_pred) 
+{
+	iterator first = begin();
+	iterator last = end();
+	if (first == last)
+	{
+		return;
+	}
+	iterator next = first;
+	while (++next != last) 
+	{
+		if (binary_pred(*first, *next))
+		{
+			erase(next);
+		}
+		else
+		{
+			first = next;
+		}
+		next = first;
+	}
 }
 /*
 假设两个链表均已经有序，用comp函数来判断如何合并两个链表
 */
-template <class T, class Alloc> template <class StrictWeakOrdering>
-void list<T, Alloc>::merge(list<T, Alloc>& x, StrictWeakOrdering comp) {
-  iterator first1 = begin();
-  iterator last1 = end();
-  iterator first2 = x.begin();
-  iterator last2 = x.end();
-  while (first1 != last1 && first2 != last2)
-    if (comp(*first2, *first1)) {
-      iterator next = first2;
-      transfer(first1, first2, ++next);
-      first2 = next;
-    }
-    else
-      ++first1;
-  if (first2 != last2) transfer(last1, first2, last2);
+template <class T, class Alloc> template <class StrictWeakOrdering> void list<T, Alloc>::merge(list<T, Alloc>& x, StrictWeakOrdering comp)
+{
+	iterator first1 = begin();
+	iterator last1 = end();
+	iterator first2 = x.begin();
+	iterator last2 = x.end();
+	while (first1 != last1 && first2 != last2)
+	{
+		if (comp(*first2, *first1))
+		{
+			iterator next = first2;
+			transfer(first1, first2, ++next);
+			first2 = next;
+		}
+		else
+		{
+			++first1;
+		}
+	}
+	if (first2 != last2) 
+	{ 
+		transfer(last1, first2, last2); 
+	}
 }
 /*
 用函数comp来判断如何排序链表
 */
-template <class T, class Alloc> template <class StrictWeakOrdering>
-void list<T, Alloc>::sort(StrictWeakOrdering comp) {
-  if (node->next == node || link_type(node->next)->next == node) return;
-  list<T, Alloc> carry;
-  list<T, Alloc> counter[64];
-  int fill = 0;
-  while (!empty()) {
-    carry.splice(carry.begin(), *this, begin());
-    int i = 0;
-    while(i < fill && !counter[i].empty()) {
-      counter[i].merge(carry, comp);
-      carry.swap(counter[i++]);
-    }
-    carry.swap(counter[i]);         
-    if (i == fill) ++fill;
-  } 
+template <class T, class Alloc> template <class StrictWeakOrdering> void list<T, Alloc>::sort(StrictWeakOrdering comp) 
+{
+	if (node->next == node || link_type(node->next)->next == node) 
+	{ 
+		return; 
+	}
+	list<T, Alloc> carry;
+	list<T, Alloc> counter[64];
+	int fill = 0;
+	while (!empty()) 
+	{
+		carry.splice(carry.begin(), *this, begin());
+		int i = 0;
+		while(i < fill && !counter[i].empty()) 
+		{
+			counter[i].merge(carry, comp);
+			carry.swap(counter[i++]);
+		}
+		carry.swap(counter[i]);         
+		if (i == fill) 
+		{ 
+			++fill; 
+		}
+	} 
  
-  for (int i = 1; i < fill; ++i) counter[i].merge(counter[i-1], comp);
-  swap(counter[fill-1]);
+	for (int i = 1; i < fill; ++i) 
+	{ 
+		counter[i].merge(counter[i - 1], comp); 
+	}
+	swap(counter[fill-1]);
 }
  
 #endif /* __STL_MEMBER_TEMPLATES */
