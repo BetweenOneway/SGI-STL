@@ -1,4 +1,3 @@
-G++ 2.91.57，cygnus\cygwin-b20\include\g++\stl_hashtable.h 完整列表
 /*
  * Copyright (c) 1996,1997
  * Silicon Graphics Computer Systems, Inc.
@@ -60,94 +59,76 @@ struct __hashtable_node
   Value val;
 };  
 //先声明 hash table，在 iterator中有用到。
-template <class Value, class Key, class HashFcn,
-          class ExtractKey, class EqualKey, class Alloc = alloc>
-class hashtable;
+template <class Value, class Key, class HashFcn,class ExtractKey, class EqualKey, class Alloc = alloc> class hashtable;
  
 // 由与 __hashtable_iterator 和 __hashtable_const_iterator 两者会
 // 互相使用，因此必须在下面先做声明，否则编译出错。
-template <class Value, class Key, class HashFcn,
-          class ExtractKey, class EqualKey, class Alloc>
-struct __hashtable_iterator;
+template <class Value, class Key, class HashFcn,class ExtractKey, class EqualKey, class Alloc>struct __hashtable_iterator;
  
-template <class Value, class Key, class HashFcn,
-          class ExtractKey, class EqualKey, class Alloc>
-struct __hashtable_const_iterator;
+template <class Value, class Key, class HashFcn,class ExtractKey, class EqualKey, class Alloc>struct __hashtable_const_iterator;
  
 //hash table中的迭代器
-template <class Value, class Key, class HashFcn,
-          class ExtractKey, class EqualKey, class Alloc>
-struct __hashtable_iterator {
-  typedef hashtable<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>
-          hashtable;
-  typedef __hashtable_iterator<Value, Key, HashFcn, 
-                               ExtractKey, EqualKey, Alloc>
-          iterator;
-  typedef __hashtable_const_iterator<Value, Key, HashFcn, 
-                                     ExtractKey, EqualKey, Alloc>
-          const_iterator;
-  typedef __hashtable_node<Value> node;
+template <class Value, class Key, class HashFcn,class ExtractKey, class EqualKey, class Alloc>struct __hashtable_iterator 
+{
+	typedef hashtable<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc> hashtable;
+	typedef __hashtable_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc> iterator;
+	typedef __hashtable_const_iterator<Value, Key, HashFcn,ExtractKey, EqualKey, Alloc> const_iterator;
+	typedef __hashtable_node<Value> node;
  
-  //迭代器类型，只能向前
-  typedef forward_iterator_tag iterator_category;
-  typedef Value value_type;
-  typedef ptrdiff_t difference_type;
-  typedef size_t size_type;
-  typedef Value& reference;
-  typedef Value* pointer;
+	//迭代器类型，只能向前
+	typedef forward_iterator_tag iterator_category;
+	typedef Value value_type;
+	typedef ptrdiff_t difference_type;
+	typedef size_t size_type;
+	typedef Value& reference;
+	typedef Value* pointer;
  
-  node* cur;		// 迭代器目前所指之节点
-  hashtable* ht;	// 保持对容器的连接关系，因为可能需要从bucket跳到bucket
+	node* cur;		// 迭代器目前所指之节点
+	hashtable* ht;	// 保持对容器的连接关系，因为可能需要从bucket跳到bucket
  
-  __hashtable_iterator(node* n, hashtable* tab) : cur(n), ht(tab) {}
-  //默认构造函数什么也没做
-  __hashtable_iterator() {}
-  reference operator*() const { return cur->val; }
-#ifndef __SGI_STL_NO_ARROW_OPERATOR
-  pointer operator->() const { return &(operator*()); }
-#endif /* __SGI_STL_NO_ARROW_OPERATOR */
-  iterator& operator++();
-  iterator operator++(int);
-  bool operator==(const iterator& it) const { return cur == it.cur; }
-  bool operator!=(const iterator& it) const { return cur != it.cur; }
+	__hashtable_iterator(node* n, hashtable* tab) : cur(n), ht(tab) {}
+	//默认构造函数什么也没做
+	__hashtable_iterator() {}
+	reference operator*() const { return cur->val; }
+	#ifndef __SGI_STL_NO_ARROW_OPERATOR
+	pointer operator->() const { return &(operator*()); }
+	#endif /* __SGI_STL_NO_ARROW_OPERATOR */
+	iterator& operator++();
+	iterator operator++(int);
+	bool operator==(const iterator& it) const { return cur == it.cur; }
+	bool operator!=(const iterator& it) const { return cur != it.cur; }
 };
  
  
-template <class Value, class Key, class HashFcn,
-          class ExtractKey, class EqualKey, class Alloc>
-struct __hashtable_const_iterator {
-  typedef hashtable<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>
-          hashtable;
-  typedef __hashtable_iterator<Value, Key, HashFcn, 
-                               ExtractKey, EqualKey, Alloc>
-          iterator;
-  typedef __hashtable_const_iterator<Value, Key, HashFcn, 
-                                     ExtractKey, EqualKey, Alloc>
-          const_iterator;
-  typedef __hashtable_node<Value> node;
+template <class Value, class Key, class HashFcn,class ExtractKey, class EqualKey, class Alloc>struct __hashtable_const_iterator 
+{
+	typedef hashtable<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc> hashtable;
+	typedef __hashtable_iterator<Value, Key, HashFcn,ExtractKey, EqualKey, Alloc> iterator;
+	typedef __hashtable_const_iterator<Value, Key, HashFcn,ExtractKey, EqualKey, Alloc> const_iterator;
+	typedef __hashtable_node<Value> node;
  
-  typedef forward_iterator_tag iterator_category;	// 注意
-  typedef Value value_type;
-  typedef ptrdiff_t difference_type;
-  typedef size_t size_type;
-  typedef const Value& reference;
-  typedef const Value* pointer;
+	typedef forward_iterator_tag iterator_category;	// 注意
+	typedef Value value_type;
+	typedef ptrdiff_t difference_type;
+	typedef size_t size_type;
+	typedef const Value& reference;
+	typedef const Value* pointer;
  
-  const node* cur;
-  const hashtable* ht;
+	const node* cur;
+	const hashtable* ht;
  
-  __hashtable_const_iterator(const node* n, const hashtable* tab)
-    : cur(n), ht(tab) {}
-  __hashtable_const_iterator() {}
-  __hashtable_const_iterator(const iterator& it) : cur(it.cur), ht(it.ht) {}
-  reference operator*() const { return cur->val; }
-#ifndef __SGI_STL_NO_ARROW_OPERATOR
-  pointer operator->() const { return &(operator*()); }
-#endif /* __SGI_STL_NO_ARROW_OPERATOR */
-  const_iterator& operator++();
-  const_iterator operator++(int);
-  bool operator==(const const_iterator& it) const { return cur == it.cur; }
-  bool operator!=(const const_iterator& it) const { return cur != it.cur; }
+	__hashtable_const_iterator(const node* n, const hashtable* tab)
+	: cur(n), ht(tab) {}
+	__hashtable_const_iterator() {}
+	__hashtable_const_iterator(const iterator& it) : cur(it.cur), ht(it.ht) {}
+	reference operator*() const { return cur->val; }
+	#ifndef __SGI_STL_NO_ARROW_OPERATOR
+	pointer operator->() const { return &(operator*()); }
+	#endif /* __SGI_STL_NO_ARROW_OPERATOR */
+	const_iterator& operator++();
+	const_iterator operator++(int);
+	bool operator==(const const_iterator& it) const { return cur == it.cur; }
+	bool operator!=(const const_iterator& it) const { return cur != it.cur; }
 };
  
 // 注意：假设 long 至少有 32 bits。
@@ -166,12 +147,12 @@ static const unsigned long __stl_prime_list[__stl_num_primes] =
 //找出28个素数中，最接近n且大于n的那个数
 inline unsigned long __stl_next_prime(unsigned long n)
 {
-  const unsigned long* first = __stl_prime_list;
-  const unsigned long* last = __stl_prime_list + __stl_num_primes;
-  const unsigned long* pos = lower_bound(first, last, n);
-  // 以上，lower_bound() 是泛型算法
-  // 使用 lower_bound()，序列需先排序。上述数组以排序
-  return pos == last ? *(last - 1) : *pos;
+	const unsigned long* first = __stl_prime_list;
+	const unsigned long* last = __stl_prime_list + __stl_num_primes;
+	const unsigned long* pos = lower_bound(first, last, n);
+	// 以上，lower_bound() 是泛型算法
+	// 使用 lower_bound()，序列需先排序。上述数组以排序
+	return pos == last ? *(last - 1) : *pos;
 }
 /*
 Value 节点的实值类型
