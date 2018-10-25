@@ -30,7 +30,7 @@
 #ifndef __SGI_STL_INTERNAL_HEAP_H
 #define __SGI_STL_INTERNAL_HEAP_H
  
-__STL_BEGIN_NAMESPACE
+//__STL_BEGIN_NAMESPACE
  
 #if defined(__sgi) && !defined(__GNUC__) && (_MIPS_SIM != _MIPS_SIM_ABI32)
 #pragma set woff 1209
@@ -63,8 +63,6 @@ inline void __push_heap_aux(RandomAccessIterator first,RandomAccessIterator last
 template <class RandomAccessIterator>
 inline void push_heap(RandomAccessIterator first, RandomAccessIterator last) 
 {
-	// 注意，此函式被呼叫時，新元素應已置於底層容器的最尾端。
-	//distance_type(first) = 0
 	__push_heap_aux(first, last, distance_type(first), value_type(first));
 }
  
@@ -130,7 +128,8 @@ void __adjust_heap(RandomAccessIterator first, Distance holeIndex,Distance len, 
 template <class RandomAccessIterator, class T, class Distance>
 inline void __pop_heap(RandomAccessIterator first, RandomAccessIterator last,RandomAccessIterator result, T value, Distance*) 
 {
-	*result = *first; // 把堆顶的值放到堆尾，堆尾的值保存在参数value中
+	// 把堆顶的值放到堆尾，堆尾的值保存在参数value中
+	*result = *first;
 	__adjust_heap(first, Distance(0), Distance(last - first), value);
 }
  
