@@ -31,7 +31,7 @@
 #ifndef __SGI_STL_INTERNAL_HASHTABLE_H
 #define __SGI_STL_INTERNAL_HASHTABLE_H
  
-// Hashtable class 用來實作 hashed associative containers
+// Hashtable class 用来作 hashed associative containers
 // hash_set, hash_map, hash_multiset, 和 hash_multimap.
  
 #include <stl_algobase.h>
@@ -164,162 +164,164 @@ EqualKey判断键值是否相同的方法（函数或仿函数）
 template <class Value, class Key, class HashFcn,
           class ExtractKey, class EqualKey,
           class Alloc> 	// 最上面已经说明：默认使用 alloc 空间配置器。
-class hashtable {
-public:
-  //为 template  类型参数重新定义一个名称（貌似没必要）
-  typedef Key key_type;
-  typedef Value value_type;
-  typedef HashFcn hasher;//hash函数
-  typedef EqualKey key_equal;
+class hashtable 
+{
+	public:
+		//为 template  类型参数重新定义一个名称（貌似没必要）
+		typedef Key key_type;
+		typedef Value value_type;
+		typedef HashFcn hasher;//hash函数
+		typedef EqualKey key_equal;
  
-  typedef size_t            size_type;
-  typedef ptrdiff_t         difference_type;
-  typedef value_type*       pointer;
-  typedef const value_type* const_pointer;
-  typedef value_type&       reference;
-  typedef const value_type& const_reference;
+		typedef size_t            size_type;
+		typedef ptrdiff_t         difference_type;
+		typedef value_type*       pointer;
+		typedef const value_type* const_pointer;
+		typedef value_type&       reference;
+		typedef const value_type& const_reference;
  
-  hasher hash_funct() const { return hash; }
-  key_equal key_eq() const { return equals; }
+		hasher hash_funct() const { return hash; }
+		key_equal key_eq() const { return equals; }
  
-private:
-  //以下三个都是 function objects。。、<stl_hash_fun.h>中定义了几个
-  //标准类型(如int,c-style string等)的 hasher。
-  hasher hash;	
-  key_equal equals;
-  ExtractKey get_key;
+	private:
+		//以下三个都是 function objects。。、<stl_hash_fun.h>中定义了几个
+		//标准类型(如int,c-style string等)的 hasher。
+		hasher hash;	
+		key_equal equals;
+		ExtractKey get_key;
  
-  typedef __hashtable_node<Value> node;
-  typedef simple_alloc<node, Alloc> node_allocator;
+		typedef __hashtable_node<Value> node;
+		typedef simple_alloc<node, Alloc> node_allocator;
  
-  vector<node*,Alloc> buckets;	// 以 vector 完成
-  size_type num_elements;//hash table中节点的个数
+		vector<node*,Alloc> buckets;	// 以 vector 完成
+		size_type num_elements;//hash table中节点的个数
  
-public:
-  typedef __hashtable_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, 
-                               Alloc>
-  iterator;
+	public:
+		typedef __hashtable_iterator<Value, Key, HashFcn, ExtractKey, EqualKey,Alloc> iterator;
+		typedef __hashtable_const_iterator<Value, Key, HashFcn, ExtractKey, EqualKey,Alloc> const_iterator;
  
-  typedef __hashtable_const_iterator<Value, Key, HashFcn, ExtractKey, EqualKey,
-                                     Alloc>
-  const_iterator;
+		friend struct __hashtable_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>;
+		friend struct __hashtable_const_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>;
  
-  friend struct
-  __hashtable_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>;
-  friend struct
-  __hashtable_const_iterator<Value, Key, HashFcn, ExtractKey, EqualKey, Alloc>;
+	public:
+		//没有默认的构造函数
+		hashtable(size_type n,const HashFcn& hf,const EqualKey&   eql,const ExtractKey& ext) : hash(hf), equals(eql), get_key(ext), num_elements(0)
+		{
+			initialize_buckets(n);
+		}
  
-public:
-  //没有默认的构造函数
-  hashtable(size_type n,
-            const HashFcn&    hf,
-            const EqualKey&   eql,
-            const ExtractKey& ext)
-    : hash(hf), equals(eql), get_key(ext), num_elements(0)
-  {
-    initialize_buckets(n);
-  }
+		hashtable(size_type n,const HashFcn& hf,const EqualKey& eql) : hash(hf), equals(eql), get_key(ExtractKey()), num_elements(0)
+		{
+			initialize_buckets(n);
+		}
  
-  hashtable(size_type n,
-            const HashFcn&    hf,
-            const EqualKey&   eql)
-    : hash(hf), equals(eql), get_key(ExtractKey()), num_elements(0)
-  {
-    initialize_buckets(n);
-  }
+		hashtable(const hashtable& ht): hash(ht.hash), equals(ht.equals), get_key(ht.get_key), num_elements(0)
+		{
+			copy_from(ht);
+		}
  
-  hashtable(const hashtable& ht)
-    : hash(ht.hash), equals(ht.equals), get_key(ht.get_key), num_elements(0)
-  {
-    copy_from(ht);
-  }
+		hashtable& operator= (const hashtable& ht)
+		{
+			//防止自身赋值
+			if (&ht != this) 
+			{	
+				clear();		// 先清除自己
+				hash = ht.hash;	// 以下三个动作，将三份data members 复制过来。
+				equals = ht.equals;
+				get_key = ht.get_key;
+				copy_from(ht);	// 完整赋值整个 hash table的内容。
+			}
+			return *this;
+		}
  
-  hashtable& operator= (const hashtable& ht)
-  {
-    if (&ht != this) {	//防止自身赋值
-      clear();		// 先清除自己
-      hash = ht.hash;	// 以下三个动作，将三份data members 复制过来。
-      equals = ht.equals;
-      get_key = ht.get_key;
-      copy_from(ht);	// 完整赋值整个 hash table的内容。
-    }
-    return *this;
-  }
+		~hashtable() { clear(); }
  
-  ~hashtable() { clear(); }
+		size_type size() const { return num_elements; }
+		size_type max_size() const { return size_type(-1); }
+		bool empty() const { return size() == 0; }
  
-  size_type size() const { return num_elements; }
-  size_type max_size() const { return size_type(-1); }
-  bool empty() const { return size() == 0; }
+		void swap(hashtable& ht)
+		{
+			__STD::swap(hash, ht.hash);
+			__STD::swap(equals, ht.equals);
+			__STD::swap(get_key, ht.get_key);
+			buckets.swap(ht.buckets);
+			__STD::swap(num_elements, ht.num_elements);
+		}
  
-  void swap(hashtable& ht)
-  {
-    __STD::swap(hash, ht.hash);
-    __STD::swap(equals, ht.equals);
-    __STD::swap(get_key, ht.get_key);
-    buckets.swap(ht.buckets);
-    __STD::swap(num_elements, ht.num_elements);
-  }
+		iterator begin()
+		{ 
+			for (size_type n = 0; n < buckets.size(); ++n)
+			{
+				//找出第一个被使用的节点，此即 begin iterator。
+				if (buckets[n])
+				{
+					return iterator(buckets[n], this);
+				}
+			}
+			return end();
+		}
  
-  iterator begin()
-  { 
-    for (size_type n = 0; n < buckets.size(); ++n)
-	  //找出第一个被使用的节点，此即 begin iterator。
-      if (buckets[n])
-        return iterator(buckets[n], this);
-    return end();
-  }
+		//最后被使用节点的下个位置，所以使用0来初始化迭代器
+		iterator end() { return iterator(0, this); }
  
-  //最后被使用节点的下个位置，所以使用0来初始化迭代器
-  iterator end() { return iterator(0, this); }
+		const_iterator begin() const
+		{
+			for (size_type n = 0; n < buckets.size(); ++n)
+			{
+				if (buckets[n])
+				{
+					return const_iterator(buckets[n], this);
+				}
+			}
+			return end();
+		}
  
-  const_iterator begin() const
-  {
-    for (size_type n = 0; n < buckets.size(); ++n)
-      if (buckets[n])
-        return const_iterator(buckets[n], this);
-    return end();
-  }
+		const_iterator end() const { return const_iterator(0, this); }
  
-  const_iterator end() const { return const_iterator(0, this); }
+		friend bool operator== __STL_NULL_TMPL_ARGS (const hashtable&, const hashtable&);
  
-  friend bool
-  operator== __STL_NULL_TMPL_ARGS (const hashtable&, const hashtable&);
+	public:
  
-public:
+		// bucket 个数即 buckets vector 的大小
+		size_type bucket_count() const 
+		{ 
+			return buckets.size(); 
+		}
  
-  // bucket 个数即 buckets vector 的大小
-  size_type bucket_count() const { return buckets.size(); }
+		//以目前情况（不重建表格），总共可以有多少个 buckets
+		size_type max_bucket_count() const
+		{
+			return __stl_prime_list[__stl_num_primes - 1]; 
+		} 
  
-  //以目前情况（不重建表格），总共可以有多少个 buckets
-  size_type max_bucket_count() const
-    { return __stl_prime_list[__stl_num_primes - 1]; } 
+		// 某一个 bucket （内含一个list） 容纳多少个元素
+		size_type elems_in_bucket(size_type bucket) const
+		{
+			size_type result = 0;
+			for (node* cur = buckets[bucket]; cur; cur = cur->next)
+			{
+				result += 1;
+			}
+			return result;
+		}
  
-  // 某一个 bucket （内含一个list） 容纳多少个元素
-  size_type elems_in_bucket(size_type bucket) const
-  {
-    size_type result = 0;
-    for (node* cur = buckets[bucket]; cur; cur = cur->next)
-      result += 1;
-    return result;
-  }
+		//安插元素，不允许重复
+		pair<iterator, bool> insert_unique(const value_type& obj)
+		{
+			resize(num_elements + 1); 	// 判断是否需要重建表格，如果需要就填充
+			return insert_unique_noresize(obj);
+		}
  
-  //安插元素，不允许重复
-  pair<iterator, bool> insert_unique(const value_type& obj)
-  {
-    resize(num_elements + 1); 	// 判断是否需要重建表格，如果需要就填充
-    return insert_unique_noresize(obj);
-  }
+		// 安插元素，允许重复
+		iterator insert_equal(const value_type& obj)
+		{
+			resize(num_elements + 1);
+			return insert_equal_noresize(obj);
+		}
  
-  // 安插元素，允许重复
-  iterator insert_equal(const value_type& obj)
-  {
-    resize(num_elements + 1);
-    return insert_equal_noresize(obj);
-  }
- 
-  pair<iterator, bool> insert_unique_noresize(const value_type& obj);
-  iterator insert_equal_noresize(const value_type& obj);
+		pair<iterator, bool> insert_unique_noresize(const value_type& obj);
+		iterator insert_equal_noresize(const value_type& obj);
  
 #ifdef __STL_MEMBER_TEMPLATES
 //插入两个迭代器之间的元素[f l)
