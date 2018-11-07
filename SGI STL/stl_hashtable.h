@@ -205,7 +205,7 @@ class hashtable
  
 	public:
 		//没有默认的构造函数
-		hashtable(size_type n,const HashFcn& hf,const EqualKey&   eql,const ExtractKey& ext) : hash(hf), equals(eql), get_key(ext), num_elements(0)
+		hashtable(size_type n,const HashFcn& hf,const EqualKey& eql,const ExtractKey& ext) : hash(hf), equals(eql), get_key(ext), num_elements(0)
 		{
 			initialize_buckets(n);
 		}
@@ -376,14 +376,16 @@ class hashtable
   }
  
 #else /* __STL_MEMBER_TEMPLATES */
-  void insert_unique(const value_type* f, const value_type* l)
-  {
-  //可以直接计算迭代器之间的距离，应该是rando access iterator
-    size_type n = l - f;
-    resize(num_elements + n);
-    for ( ; n > 0; --n, ++f)
-      insert_unique_noresize(*f);
-  }
+	void insert_unique(const value_type* f, const value_type* l)
+	{
+		//可以直接计算迭代器之间的距离，应该是rando access iterator
+		size_type n = l - f;
+		resize(num_elements + n);
+		for (; n > 0; --n, ++f)
+		{
+			insert_unique_noresize(*f);
+		}
+	}
  
   void insert_equal(const value_type* f, const value_type* l)
   {
@@ -500,17 +502,18 @@ private:
     return bkt_num_key(get_key(obj), n);
   }
  
-  node* new_node(const value_type& obj)
-  {
-    node* n = node_allocator::allocate();//配置空间
-    n->next = 0;//指针next设置为NULL
-    __STL_TRY {
-      construct(&n->val, obj);//构建元素
-      return n;
-    }
-	//commit or rollback
-    __STL_UNWIND(node_allocator::deallocate(n));
-  }
+	node* new_node(const value_type& obj)
+	{
+		node* n = node_allocator::allocate();//配置空间
+		n->next = 0;//指针next设置为NULL
+		__STL_TRY 
+		{
+			construct(&n->val, obj);//构建元素
+			return n;
+		}
+		//commit or rollback
+		__STL_UNWIND(node_allocator::deallocate(n));
+	}
   
   void delete_node(node* n)
   {
@@ -653,15 +656,19 @@ template <class V, class K, class HF, class Ex, class Eq, class A>
 pair<typename hashtable<V, K, HF, Ex, Eq, A>::iterator, bool> 
 hashtable<V, K, HF, Ex, Eq, A>::insert_unique_noresize(const value_type& obj)
 {
-  const size_type n = bkt_num(obj);	// 決定obj位于哪个buckets中
-  node* first = buckets[n];	 // 令 first 指向 bucket 对应串列头部
+	const size_type n = bkt_num(obj);	// 決定obj位于哪个buckets中
+	node* first = buckets[n];	 // 令 first 指向 bucket 对应串列头部
  
-  // 如果 buckets[n] 已被占用，此时first 将不为0，于是进入以下循环，
-  // 遍历bucket对应的整个链表
-  for (node* cur = first; cur; cur = cur->next) 
-    if (equals(get_key(cur->val), get_key(obj)))
-      // 如果发现链表中的某键值相同，就不安插，立刻回返。
-      return pair<iterator, bool>(iterator(cur, this), false);
+	// 如果 buckets[n] 已被占用，此时first 将不为0，于是进入以下循环，
+	// 遍历bucket对应的整个链表
+	for (node* cur = first; cur; cur = cur->next)
+	{
+		if (equals(get_key(cur->val), get_key(obj)))
+		{
+			// 如果发现链表中的某键值相同，就不安插，立刻回返。
+			return pair<iterator, bool>(iterator(cur, this), false);
+		}
+	}
  
   //离开以上循环（或没进入循环），first指向指向bucket所指链表的头部节点
   node* tmp = new_node(obj);	// 生成新节点并赋值

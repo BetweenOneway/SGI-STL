@@ -1,4 +1,3 @@
-G++ 2.91.57，cygnus\cygwin-b20\include\g++\stl_hash_set.h 完整列表
 /*
  * Copyright (c) 1996
  * Silicon Graphics Computer Systems, Inc.
@@ -41,9 +40,7 @@ __STL_BEGIN_NAMESPACE
 #ifndef __STL_LIMITED_DEFAULT_TEMPLATES
 // hash<>是个 function object，定义于 <stl_hash_fun.h>中
 //例：hash<int>::operator()(intx)const{return x;}
-template <class Value, class HashFcn = hash<Value>,
-          class EqualKey = equal_to<Value>,
-          class Alloc = alloc>
+template <class Value, class HashFcn = hash<Value>,class EqualKey = equal_to<Value>,class Alloc = alloc>
 #else
 template <class Value, class HashFcn, class EqualKey, class Alloc = alloc>
 #endif
